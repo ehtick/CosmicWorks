@@ -480,6 +480,7 @@ resource managedIdentityRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sq
   name: guid(cosmosAccount.id, managedIdentityPrincipalId, cosmosDataContributorRoleId)
   properties: {
     principalId: managedIdentityPrincipalId
+    principalType: 'ServicePrincipal'
     roleDefinitionId: subscriptionResourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', cosmosAccount.name, cosmosDataContributorRoleId)
     scope: cosmosAccount.id
   }
