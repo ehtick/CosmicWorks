@@ -1,29 +1,59 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
-
-name: CosmicWorks
+name: cosmicworks
 metadata:
-  template: CosmicWorks
-pipeline:
-  provider: github
+  template: cosmicworks@0.0.1
+services:
+  cosmosdb:
+    project: ./infra
+    language: bicep
+    host: azure
+    hooks:
+      postdeploy:
+        shell: pwsh
+        run: |
+          # Get the Cosmos DB endpoint from bicep output
+          $cosmosdbEndpoint = $env:AZURE_COSMOSDB_ENDPOINT
+          Write-Host "Setting up appsettings.development.json with CosmosDB endpoint: $cosmosdbEndpoint"
+          
+          # Create the content for appsettings.development.json
+          $appSettingsContent = @{
+            uri = $cosmosdbEndpoint
+          } | ConvertTo-Json
+          
+          # Define paths for modeling-demos and change-feed-categories projects
+          $projectPaths = @(
+            "./modeling-demos",
+            "./change-feed-categories"
+          )
+          
+          # Create appsettings.development.json for each project
+          foreach ($projectPath in $projectPaths) {
+            $appSettingsPath = "$projectPath/appsettings.development.json"
+            
+            # Create directory if it doesn't exist
+            if (-not (Test-Path $projectPath)) {
+              New-Item -ItemType Directory -Path $projectPath -Force
+            }
+            
+            # Write settings file
+            Set-Content -Path $appSettingsPath -Value $appSettingsContent
+            Write-Host "Created appsettings.development.json in $projectPath"
+          }
+          
+          Write-Host "Successfully created appsettings.development.json files."
+capabilities:
+  cosmos: {}
 hooks:
   postprovision:
-    windows:
-      run: |
-        dotnet user-secrets set "SUBSCRIPTION_ID" "$env:SUBSCRIPTION_ID" --project ./modeling-demos/modeling-demos.csproj
-        dotnet user-secrets set "RESOURCE_GROUP" "$env:RESOURCE_GROUP" --project ./modeling-demos/modeling-demos.csproj
-        dotnet user-secrets set "ACCOUNT_NAME" "$env:ACCOUNT_NAME" --project ./modeling-demos/modeling-demos.csproj
-        dotnet user-secrets set "LOCATION" "$env:LOCATION" --project ./modeling-demos/modeling-demos.csproj
-        dotnet user-secrets set "URI" "$env:URI" --project ./modeling-demos/modeling-demos.csproj
-      shell: pwsh
-      continueOnError: false
-      interactive: true
-    posix:
-      run: |
-        dotnet user-secrets set "SUBSCRIPTION_ID" "$SUBSCRIPTION_ID" --project ./modeling-demos/modeling-demos.csproj
-        dotnet user-secrets set "RESOURCE_GROUP" "$RESOURCE_GROUP" --project ./modeling-demos/modeling-demos.csproj
-        dotnet user-secrets set "ACCOUNT_NAME" "$ACCOUNT_NAME" --project ./modeling-demos/modeling-demos.csproj
-        dotnet user-secrets set "LOCATION" "$LOCATION" --project ./modeling-demos/modeling-demos.csproj
-        dotnet user-secrets set "URI" "$URI" --project ./modeling-demos/modeling-demos.csproj
-      shell: sh
-      continueOnError: false
-      interactive: true
+    shell: pwsh
+    run: |
+      Write-Host "Cosmos DB deployment completed!"
+policies:
+  resources:
+    cosmos:
+      resources:
+        database:
+          effect: audit
+        sqldb:
+          effect: audit
+        container:
+          effect: audit
