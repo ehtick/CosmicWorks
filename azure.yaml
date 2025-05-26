@@ -1,0 +1,41 @@
+name: cosmicworks
+metadata:
+  template: cosmicworks@0.0.1
+services:
+  cosmosdb:
+    project: ./infra
+    language: bicep
+    host: azure
+    hooks:
+      postdeploy:
+        shell: pwsh
+        run: |
+          $cosmosdbEndpoint = $env:COSMOSDB_URI
+          Write-Host "Setting up appsettings.development.json with CosmosDB endpoint: $cosmosdbEndpoint"
+          
+          $appSettingsContent = @{
+            uri = "$cosmosdbEndpoint"
+          } | ConvertTo-Json
+          
+          $appSettingsPath = "./modeling-demos/appsettings.development.json"
+          
+          Set-Content -Path $appSettingsPath -Value $appSettingsContent
+          
+          Write-Host "Successfully created appsettings.development.json file."
+capabilities:
+  cosmos: {}
+hooks:
+  postprovision:
+    shell: pwsh
+    run: |
+      Write-Host "Cosmos DB deployment completed!"
+policies:
+  resources:
+    cosmos:
+      resources:
+        database:
+          effect: audit
+        sqldb:
+          effect: audit
+        container:
+          effect: audit
