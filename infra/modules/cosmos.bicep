@@ -7,7 +7,7 @@ param currentUserPrincipalId string
 
 // Variables
 var cosmosDBAccountName = '${namePrefix}-db-${uniqueSuffix}'
-var cosmosDataContributorRoleId = '00000000-0000-0000-0000-000000000002' // Cosmos DB Built-in Data Contributor Role ID
+var cosmosDataContributorRoleId = '00000000-8000-0000-0000-000000000002' // Cosmos DB Built-in Data Contributor Role ID
 
 // Resources
 resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
@@ -486,7 +486,7 @@ resource managedIdentityRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sq
   }
 }
 
-resource currentUserRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
+resource currentUserRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = if (currentUserPrincipalId != '00000000-0000-0000-0000-000000000000') {
   parent: cosmosAccount
   name: guid(cosmosAccount.id, currentUserPrincipalId, cosmosDataContributorRoleId)
   properties: {

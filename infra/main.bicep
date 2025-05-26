@@ -32,4 +32,4 @@ module cosmosDb './modules/cosmos.bicep' = {
 }
 
 // Outputs
-output cosmosDbEndpoint string = cosmosDb.outputs.cosmosDbEndpoint
+output AZURE_COSMOSDB_ENDPOINT string = cosmosDb.outputs.cosmosDbEndpoint

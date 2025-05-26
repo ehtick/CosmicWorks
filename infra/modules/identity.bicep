@@ -6,11 +6,8 @@ param uniqueSuffix string
 // Variables
 var managedIdentityName = '${namePrefix}-identity-${uniqueSuffix}'
 
-// Get the current user/service principal identity
-resource currentUser 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
-  scope: subscription()
-  name: '${az.clientId}'
-}
+// Get the current Azure deployment principal
+var currentPrincipalId = length(az.objectId) > 0 ? az.objectId : '00000000-0000-0000-0000-000000000000'
 
 // Create a user-assigned managed identity for the application
 resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
@@ -22,4 +19,4 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
 output managedIdentityPrincipalId string = managedIdentity.properties.principalId
 output managedIdentityId string = managedIdentity.id
 output managedIdentityClientId string = managedIdentity.properties.clientId
-output currentUserPrincipalId string = az.objectId
+output currentUserPrincipalId string = currentPrincipalId
