@@ -10,7 +10,7 @@ var cosmosDBAccountName = '${namePrefix}-db-${uniqueSuffix}'
 var cosmosDataContributorRoleId = '00000000-8000-0000-0000-000000000002' // Cosmos DB Built-in Data Contributor Role ID
 
 // Resources
-resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
+resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-11-15' = {
   name: cosmosDBAccountName
   location: location
   kind: 'GlobalDocumentDB'
@@ -36,7 +36,7 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
 }
 
 // Database v1
-resource databaseV1 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' = {
+resource databaseV1 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-11-15' = {
   parent: cosmosAccount
   name: 'database-v1'
   properties: {
@@ -47,7 +47,7 @@ resource databaseV1 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-
 }
 
 // Database v1 Containers
-resource customerV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource customerV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV1
   name: 'customer'
   properties: {
@@ -64,7 +64,7 @@ resource customerV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases
   }
 }
 
-resource customerAddressV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource customerAddressV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV1
   name: 'customerAddress'
   properties: {
@@ -81,7 +81,7 @@ resource customerAddressV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDa
   }
 }
 
-resource customerPasswordV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource customerPasswordV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV1
   name: 'customerPassword'
   properties: {
@@ -98,7 +98,7 @@ resource customerPasswordV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlD
   }
 }
 
-resource productV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV1
   name: 'product'
   properties: {
@@ -115,7 +115,7 @@ resource productV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/
   }
 }
 
-resource productCategoryV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productCategoryV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV1
   name: 'productCategory'
   properties: {
@@ -132,7 +132,7 @@ resource productCategoryV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDa
   }
 }
 
-resource productTagV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productTagV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV1
   name: 'productTag'
   properties: {
@@ -149,7 +149,7 @@ resource productTagV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabas
   }
 }
 
-resource productTagsV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productTagsV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV1
   name: 'productTags'
   properties: {
@@ -166,7 +166,7 @@ resource productTagsV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDataba
   }
 }
 
-resource salesOrderV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource salesOrderV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV1
   name: 'salesOrder'
   properties: {
@@ -183,7 +183,7 @@ resource salesOrderV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabas
   }
 }
 
-resource salesOrderDetailV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource salesOrderDetailV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV1
   name: 'salesOrderDetail'
   properties: {
@@ -201,7 +201,7 @@ resource salesOrderDetailV1Container 'Microsoft.DocumentDB/databaseAccounts/sqlD
 }
 
 // Database v2
-resource databaseV2 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' = {
+resource databaseV2 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-11-15' = {
   parent: cosmosAccount
   name: 'database-v2'
   properties: {
@@ -212,7 +212,7 @@ resource databaseV2 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-
 }
 
 // Database v2 Containers
-resource customerV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource customerV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV2
   name: 'customer'
   properties: {
@@ -229,7 +229,7 @@ resource customerV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases
   }
 }
 
-resource productV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV2
   name: 'product'
   properties: {
@@ -246,7 +246,7 @@ resource productV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/
   }
 }
 
-resource productCategoryV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productCategoryV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV2
   name: 'productCategory'
   properties: {
@@ -263,7 +263,7 @@ resource productCategoryV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDa
   }
 }
 
-resource productTagV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productTagV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV2
   name: 'productTag'
   properties: {
@@ -280,7 +280,7 @@ resource productTagV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabas
   }
 }
 
-resource salesOrderV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource salesOrderV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV2
   name: 'salesOrder'
   properties: {
@@ -298,7 +298,7 @@ resource salesOrderV2Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabas
 }
 
 // Database v3
-resource databaseV3 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' = {
+resource databaseV3 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-11-15' = {
   parent: cosmosAccount
   name: 'database-v3'
   properties: {
@@ -309,7 +309,7 @@ resource databaseV3 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-
 }
 
 // Database v3 Containers
-resource customerV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource customerV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV3
   name: 'customer'
   properties: {
@@ -326,7 +326,7 @@ resource customerV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases
   }
 }
 
-resource productV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV3
   name: 'product'
   properties: {
@@ -343,7 +343,7 @@ resource productV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/
   }
 }
 
-resource productCategoryV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productCategoryV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV3
   name: 'productCategory'
   properties: {
@@ -360,7 +360,7 @@ resource productCategoryV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDa
   }
 }
 
-resource productTagV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productTagV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV3
   name: 'productTag'
   properties: {
@@ -377,7 +377,7 @@ resource productTagV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabas
   }
 }
 
-resource salesOrderV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource salesOrderV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV3
   name: 'salesOrder'
   properties: {
@@ -395,7 +395,7 @@ resource salesOrderV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabas
 }
 
 // Database v4
-resource databaseV4 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15' = {
+resource databaseV4 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-11-15' = {
   parent: cosmosAccount
   name: 'database-v4'
   properties: {
@@ -406,7 +406,7 @@ resource databaseV4 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-
 }
 
 // Database v4 Containers
-resource customerV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource customerV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV4
   name: 'customer'
   properties: {
@@ -423,7 +423,7 @@ resource customerV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases
   }
 }
 
-resource productV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV4
   name: 'product'
   properties: {
@@ -440,7 +440,7 @@ resource productV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/
   }
 }
 
-resource productMetaV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource productMetaV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV4
   name: 'productMeta'
   properties: {
@@ -457,7 +457,7 @@ resource productMetaV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDataba
   }
 }
 
-resource salesByCategoryV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+resource salesByCategoryV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
   parent: databaseV4
   name: 'salesByCategory'
   properties: {
@@ -475,23 +475,21 @@ resource salesByCategoryV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDa
 }
 
 // Role assignments
-resource managedIdentityRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
+resource managedIdentityRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-11-15' = {
   parent: cosmosAccount
   name: guid(cosmosAccount.id, managedIdentityPrincipalId, cosmosDataContributorRoleId)
   properties: {
     principalId: managedIdentityPrincipalId
-    principalType: 'ServicePrincipal'
     roleDefinitionId: subscriptionResourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', cosmosAccount.name, cosmosDataContributorRoleId)
     scope: cosmosAccount.id
   }
 }
 
-resource currentUserRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = if (currentUserPrincipalId != '00000000-0000-0000-0000-000000000000') {
+resource currentUserRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-11-15' = if (currentUserPrincipalId != '00000000-0000-0000-0000-000000000000') {
   parent: cosmosAccount
   name: guid(cosmosAccount.id, currentUserPrincipalId, cosmosDataContributorRoleId)
   properties: {
     principalId: currentUserPrincipalId
-    principalType: 'User'
     roleDefinitionId: subscriptionResourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', cosmosAccount.name, cosmosDataContributorRoleId)
     scope: cosmosAccount.id
   }

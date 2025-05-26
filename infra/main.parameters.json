@@ -6,7 +6,10 @@
       "value": "cosmicworks"
     },
     "location": {
-      "value": "eastus"
+      "value": "westus"
+    },
+    "principalId": {
+      "value": "${AZURE_PRINCIPAL_ID}"
     }
   }
 }
