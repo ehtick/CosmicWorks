@@ -491,6 +491,7 @@ resource currentUserRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRol
   name: guid(cosmosAccount.id, currentUserPrincipalId, cosmosDataContributorRoleId)
   properties: {
     principalId: currentUserPrincipalId
+    principalType: 'User'
     roleDefinitionId: subscriptionResourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', cosmosAccount.name, cosmosDataContributorRoleId)
     scope: cosmosAccount.id
   }
