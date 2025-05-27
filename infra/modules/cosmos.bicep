@@ -1,5 +1,6 @@
 // Parameters
 param location string
+param tags object = {}
 param namePrefix string
 param uniqueSuffix string
 param managedIdentityPrincipalId string
@@ -7,13 +8,14 @@ param currentUserPrincipalId string
 
 // Variables
 var cosmosDBAccountName = '${namePrefix}-db-${uniqueSuffix}'
-var cosmosDataContributorRoleId = '00000000-8000-0000-0000-000000000002' // Cosmos DB Built-in Data Contributor Role ID
+var cosmosDataContributorRoleId = '00000000-0000-0000-0000-000000000002' // Cosmos DB Built-in Data Contributor Role ID
 
 // Resources
 resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-11-15' = {
   name: cosmosDBAccountName
   location: location
   kind: 'GlobalDocumentDB'
+  tags: tags
   properties: {
     enableFreeTier: false
     databaseAccountOfferType: 'Standard'
@@ -394,6 +396,23 @@ resource salesOrderV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabas
   }
 }
 
+resource leasesV3Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
+  parent: databaseV3
+  name: 'leases'
+  properties: {
+    resource: {
+      id: 'leases'
+      partitionKey: {
+        paths: [
+          '/id'
+        ]
+        kind: 'Hash'
+        version: 2
+      }
+    }
+  }
+}
+
 // Database v4
 resource databaseV4 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-11-15' = {
   parent: cosmosAccount
@@ -457,22 +476,6 @@ resource productMetaV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDataba
   }
 }
 
-resource salesByCategoryV4Container 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
-  parent: databaseV4
-  name: 'salesByCategory'
-  properties: {
-    resource: {
-      id: 'salesByCategory'
-      partitionKey: {
-        paths: [
-          '/categoryId'
-        ]
-        kind: 'Hash'
-        version: 2
-      }
-    }
-  }
-}
 
 // Role assignments
 resource managedIdentityRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-11-15' = {
@@ -480,17 +483,17 @@ resource managedIdentityRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sq
   name: guid(cosmosAccount.id, managedIdentityPrincipalId, cosmosDataContributorRoleId)
   properties: {
     principalId: managedIdentityPrincipalId
-    roleDefinitionId: subscriptionResourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', cosmosAccount.name, cosmosDataContributorRoleId)
+    roleDefinitionId: resourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', cosmosAccount.name, cosmosDataContributorRoleId)
     scope: cosmosAccount.id
   }
 }
 
-resource currentUserRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-11-15' = if (currentUserPrincipalId != '00000000-0000-0000-0000-000000000000') {
+resource currentUserRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-11-15' = {
   parent: cosmosAccount
   name: guid(cosmosAccount.id, currentUserPrincipalId, cosmosDataContributorRoleId)
   properties: {
     principalId: currentUserPrincipalId
-    roleDefinitionId: subscriptionResourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', cosmosAccount.name, cosmosDataContributorRoleId)
+    roleDefinitionId: resourceId('Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions', cosmosAccount.name, cosmosDataContributorRoleId)
     scope: cosmosAccount.id
   }
 }

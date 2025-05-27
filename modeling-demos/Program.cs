@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
+﻿using Azure.Identity;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Azure.Identity;
-using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Hosting;
+using models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using models;
-using cosmos_management;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 
 namespace modeling_demos
@@ -18,22 +17,17 @@ namespace modeling_demos
     {
 
         static CosmosClient cosmosClient;
-        static CosmosManagement cosmosManagement;
         static ChangeFeed changeFeed;
 
         public static void AddConfiguration(IConfigurationBuilder config)
         {
-            config.AddJsonFile(@"appSettings.json", optional: false, reloadOnChange: true)
-            .AddUserSecrets<Program>();
+            config.AddJsonFile(@"appsettings.development.json", optional: false, reloadOnChange: true);
 
             var configuration = config.Build();
             var uri = configuration["ACCOUNT_ENDPOINT"];
 
             // Create the CosmosClient instance
             cosmosClient = new CosmosClient(uri, new DefaultAzureCredential());
-
-            // Create the CosmosManagement instance
-            cosmosManagement = new CosmosManagement(configuration);
 
             // Create the ChangeFeed instance
             changeFeed = new ChangeFeed(cosmosClient);
@@ -85,9 +79,9 @@ namespace modeling_demos
                 Console.WriteLine($"[i]   Delete order and update order total");
                 Console.WriteLine($"[j]   Query top 10 customers");
                 Console.WriteLine($"-------------------------------------------");
-                Console.WriteLine($"[k]   Create databases and containers");
+                Console.WriteLine($"[k]   Unused");
                 Console.WriteLine($"[l]   Upload data to containers");
-                Console.WriteLine($"[m]   Delete databases and containers");
+                Console.WriteLine($"[m]   Unused");
                 Console.WriteLine($"-------------------------------------------");
                 Console.WriteLine($"[x]   Exit");
 
@@ -148,20 +142,22 @@ namespace modeling_demos
                 }
                 else if (result.KeyChar == 'k')
                 {
-                    // Create databases and containers
-                    await Deployment.CreateDatabaseAndContainers(cosmosManagement);
+                    
                     Console.Clear();
                 }
                 else if (result.KeyChar == 'l')
                 {
+                    //Stop Change Feed Processor
+                    await changeFeed.StopChangeFeedProcessorAsync();
                     // Upload data to containers
                     await Deployment.LoadData(cosmosClient);
+                    //Restart Change Feed Processor
+                    await changeFeed.StartChangeFeedProcessorAsync();
                     Console.Clear();
                 }
                 else if (result.KeyChar == 'm')
                 {
-                    // Delete databases and containers
-                    await Deployment.DeleteAllDatabases(cosmosManagement);
+                    
                     Console.Clear();
                 }
                 else if (result.KeyChar == 'x')
@@ -176,7 +172,7 @@ namespace modeling_demos
             Database database = cosmosClient.GetDatabase("database-v2");
             Container container = database.GetContainer("customer");
 
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
 
             //Get a customer with a query
             string sql = $"SELECT * FROM c WHERE c.id = @id";
@@ -210,7 +206,7 @@ namespace modeling_demos
             Database database = cosmosClient.GetDatabase("database-v2");
             Container container = database.GetContainer("customer");
 
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
 
             Console.WriteLine("Point Read for a single customer\n");
 
@@ -376,7 +372,7 @@ namespace modeling_demos
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
 
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
 
             string sql = "SELECT * from c WHERE c.type = 'salesOrder' and c.customerId = @customerId";
 
@@ -407,7 +403,7 @@ namespace modeling_demos
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
 
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
 
             string sql = "SELECT * from c WHERE c.customerId = @customerId";
 
@@ -457,7 +453,7 @@ namespace modeling_demos
             Container container = database.GetContainer("customer");
 
             //Get the customer
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
             ItemResponse<CustomerV4> response = await container.ReadItemAsync<CustomerV4>(
                 id: customerId,
                 partitionKey: new PartitionKey(customerId)
@@ -515,7 +511,7 @@ namespace modeling_demos
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
 
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
             string orderId = "5350ce31-ea50-4df9-9a48-faff97675ac5";
 
             ItemResponse<CustomerV4> response = await container.ReadItemAsync<CustomerV4>(

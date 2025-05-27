@@ -11,7 +11,7 @@ hooks:
       
       # Create the content for appsettings.development.json
       $appSettingsContent = @{
-        uri = $cosmosdbEndpoint
+        ACCOUNT_ENDPOINT = $cosmosdbEndpoint
       } | ConvertTo-Json
       
       # Define paths for modeling-demos and change-feed-categories projects

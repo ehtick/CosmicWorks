@@ -1,20 +1,15 @@
 ﻿using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
+using models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using models;
-using cosmos_management;
 
 namespace modeling_demos
 {
     public class ChangeFeed
     {
-        private ChangeFeedProcessor? changeFeedProcessor;
+        private ChangeFeedProcessor _changeFeedProcessor;
         private CosmosClient _cosmosClient;
         private Container _monitoredContainer;
         private Container _outputContainer;
@@ -34,16 +29,21 @@ namespace modeling_demos
         public async Task<ChangeFeedProcessor> StartChangeFeedProcessorAsync()
         {
             // Create an instance of the Change Feed Processor
-            ChangeFeedProcessor changeFeedProcessor = _monitoredContainer
+            _changeFeedProcessor = _monitoredContainer
                 .GetChangeFeedProcessorBuilder<ProductCategory>("UpdateProductCategoryChanges", HandleChangesAsync)
                 .WithInstanceName("UpdateProductCategoryChanges")
                 .WithLeaseContainer(_leasesContainer)
                 .Build();
 
             // Start the Change Feed Processor
-            await changeFeedProcessor.StartAsync();
+            await _changeFeedProcessor.StartAsync();
 
-            return changeFeedProcessor;
+            return _changeFeedProcessor;
+        }
+
+        public async Task StopChangeFeedProcessorAsync()
+        {
+            await _changeFeedProcessor.StopAsync();
         }
 
         //Implement the HandleChangesAsync method

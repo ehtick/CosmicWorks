@@ -1,8 +1,14 @@
-targetScope = 'resourceGroup'
+targetScope = 'subscription'
 
 // Parameters
+@minLength(1)
+@maxLength(64)
+@description('Name of the environment that can be used as part of naming resource convention')
+param environmentName string = 'cosmicworks'
+
+@minLength(1)
 @description('The location for all resources')
-param location string = resourceGroup().location
+param location string
 
 @description('The name prefix for all resources')
 param namePrefix string = 'cosmicworks'
@@ -11,7 +17,17 @@ param namePrefix string = 'cosmicworks'
 param principalId string
 
 // Variables
-var uniqueSuffix = uniqueString(resourceGroup().id)
+var uniqueSuffix = uniqueString(subscription().id)
+
+var tags = {
+  'azd-env-name': environmentName
+}
+
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
+  name: 'rg-${namePrefix}-${uniqueSuffix}'
+  location: location
+  tags: tags
+}
 
 // Module imports
 module identity './modules/identity.bicep' = {
@@ -21,6 +37,7 @@ module identity './modules/identity.bicep' = {
     namePrefix: namePrefix
     uniqueSuffix: uniqueSuffix
   }
+  scope: rg
 }
 
 module cosmosDb './modules/cosmos.bicep' = {
@@ -32,6 +49,7 @@ module cosmosDb './modules/cosmos.bicep' = {
     managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
     currentUserPrincipalId: principalId
   }
+  scope: rg
 }
 
 // Outputs

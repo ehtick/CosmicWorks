@@ -1,5 +1,6 @@
 // Parameters
 param location string
+param tags object = {}
 param namePrefix string
 param uniqueSuffix string
 
@@ -10,6 +11,7 @@ var managedIdentityName = '${namePrefix}-identity-${uniqueSuffix}'
 resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: managedIdentityName
   location: location
+  tags: tags
 }
 
 // Outputs
