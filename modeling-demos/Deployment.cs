@@ -18,10 +18,10 @@ namespace modeling_demos
         public static async Task LoadData(CosmosClient cosmosDBClient, bool force = false, int? schemaVersion = null)
         {
 
-            //await GetFilesFromRepo("database-v1", force);
-            //await GetFilesFromRepo("database-v2", force);
-            //await GetFilesFromRepo("database-v3", force);
-            //await GetFilesFromRepo("database-v4", force);
+            await GetFilesFromRepo("database-v1", force);
+            await GetFilesFromRepo("database-v2", force);
+            await GetFilesFromRepo("database-v3", force);
+            await GetFilesFromRepo("database-v4", force);
 
             cosmosDBClient.ClientOptions.AllowBulkExecution = true;
             cosmosDBClient.ClientOptions.EnableContentResponseOnWrite = false;
