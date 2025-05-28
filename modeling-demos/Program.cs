@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 
-namespace modeling_demos
+namespace CosmicWorks
 {
     class Program
     {
@@ -34,14 +34,6 @@ namespace modeling_demos
 
         }
 
-        public static void RegisterServices(IServiceCollection services)
-        {
-            
-            //services.AddSingleton<CosmosManagement>();
-            //services.AddSingleton<CosmosClient>();
-            //services.AddHostedService<ChangeFeed>();
-        }
-
         public static async Task Main(string[] args)
         {
             var host = Host.CreateDefaultBuilder(args)
@@ -51,7 +43,7 @@ namespace modeling_demos
                 })
                 .ConfigureServices((context, services) =>
                 {
-                    //RegisterServices(services);
+                    
                 })
                 .Build();
 
@@ -150,7 +142,8 @@ namespace modeling_demos
                     //Stop Change Feed Processor
                     await changeFeed.StopChangeFeedProcessorAsync();
                     // Upload data to containers
-                    await Deployment.LoadData(cosmosClient);
+                    //await Deployment.LoadData(cosmosClient);
+                    await Dataload.LoadData(cosmosClient);
                     //Restart Change Feed Processor
                     await changeFeed.StartChangeFeedProcessorAsync();
                     Console.Clear();

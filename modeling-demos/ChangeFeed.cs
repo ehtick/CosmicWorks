@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace modeling_demos
+namespace CosmicWorks
 {
     public class ChangeFeed
     {
