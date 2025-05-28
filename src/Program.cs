@@ -41,10 +41,6 @@ namespace CosmicWorks
                 {
                     AddConfiguration(config);
                 })
-                .ConfigureServices((context, services) =>
-                {
-                    
-                })
                 .Build();
 
             await changeFeed.StartChangeFeedProcessorAsync();
@@ -71,9 +67,7 @@ namespace CosmicWorks
                 Console.WriteLine($"[i]   Delete order and update order total");
                 Console.WriteLine($"[j]   Query top 10 customers");
                 Console.WriteLine($"-------------------------------------------");
-                Console.WriteLine($"[k]   Unused");
-                Console.WriteLine($"[l]   Upload data to containers");
-                Console.WriteLine($"[m]   Unused");
+                Console.WriteLine($"[k]   Upload data to containers");
                 Console.WriteLine($"-------------------------------------------");
                 Console.WriteLine($"[x]   Exit");
 
@@ -134,23 +128,12 @@ namespace CosmicWorks
                 }
                 else if (result.KeyChar == 'k')
                 {
-                    
-                    Console.Clear();
-                }
-                else if (result.KeyChar == 'l')
-                {
                     //Stop Change Feed Processor
                     await changeFeed.StopChangeFeedProcessorAsync();
-                    // Upload data to containers
-                    //await Deployment.LoadData(cosmosClient);
+                    //Load data from GitHub
                     await Dataload.LoadData(cosmosClient);
                     //Restart Change Feed Processor
                     await changeFeed.StartChangeFeedProcessorAsync();
-                    Console.Clear();
-                }
-                else if (result.KeyChar == 'm')
-                {
-                    
                     Console.Clear();
                 }
                 else if (result.KeyChar == 'x')
