@@ -2,9 +2,11 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 WORKDIR /app
 
-# Copy csproj and restore as distinct layers
+# Copy csproj and restore with retry for network issues
 COPY src/*.csproj ./src/
-RUN dotnet restore ./src/CosmicWorks.csproj
+RUN dotnet nuget disable source nuget.org && \
+    dotnet nuget enable source nuget.org && \
+    dotnet restore ./src/CosmicWorks.csproj
 
 # Copy everything else and build
 COPY . ./
