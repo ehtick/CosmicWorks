@@ -1,0 +1,10 @@
+.git
+.vs
+.vscode
+.devcontainer
+bin
+obj
+**/bin
+**/obj
+**/*.user
+**/appsettings.development.json

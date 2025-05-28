@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  cosmicworks:
+    build: .
+    volumes:
+      - ./src/appsettings.development.json:/app/appsettings.development.json:ro
+    environment:
+      - DOTNET_ENVIRONMENT=Development
