@@ -14,10 +14,9 @@ hooks:
         ACCOUNT_ENDPOINT = $cosmosdbEndpoint
       } | ConvertTo-Json
       
-      # Define paths for modeling-demos and change-feed-categories projects
+      # Define paths for CosmicWorks projects, maybe add a second for data loading if done during deployment 
       $projectPaths = @(
-        "./modeling-demos",
-        "./change-feed-categories"
+        "./src"
       )
       
       # Create appsettings.development.json for each project
