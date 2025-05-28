@@ -4,7 +4,7 @@ targetScope = 'subscription'
 @minLength(1)
 @maxLength(64)
 @description('Name of the environment that can be used as part of naming resource convention')
-param environmentName string = 'cosmicworks'
+param environmentName string
 
 @minLength(1)
 @description('The location for all resources')
@@ -17,7 +17,7 @@ param namePrefix string = 'cosmicworks'
 param principalId string
 
 // Variables
-var uniqueSuffix = uniqueString(subscription().id)
+var uniqueSuffix = uniqueString(subscription().id, environmentName, location, principalId)
 
 var tags = {
   'azd-env-name': environmentName
