@@ -1,29 +1,106 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
-
-name: CosmicWorks
+name: cosmicworks
 metadata:
-  template: CosmicWorks
+  template: cosmicworks@0.0.1
 pipeline:
   provider: github
 hooks:
-  postprovision:
+  preprovision:
     windows:
-      run: |
-        dotnet user-secrets set "SUBSCRIPTION_ID" "$env:SUBSCRIPTION_ID" --project ./src/CosmicWorks.csproj
-        dotnet user-secrets set "RESOURCE_GROUP" "$env:RESOURCE_GROUP" --project ./src/CosmicWorks.csproj
-        dotnet user-secrets set "ACCOUNT_NAME" "$env:ACCOUNT_NAME" --project ./src/CosmicWorks.csproj
-        dotnet user-secrets set "LOCATION" "$env:LOCATION" --project ./src/CosmicWorks.csproj
-        dotnet user-secrets set "ACCOUNT_ENDPOINT" "$env:ACCOUNT_ENDPOINT" --project ./src/CosmicWorks.csproj
       shell: pwsh
       continueOnError: false
       interactive: true
-    posix:
       run: |
-        dotnet user-secrets set "SUBSCRIPTION_ID" "$SUBSCRIPTION_ID" --project ./src/CosmicWorks.csproj
-        dotnet user-secrets set "RESOURCE_GROUP" "$RESOURCE_GROUP" --project ./src/CosmicWorks.csproj
-        dotnet user-secrets set "ACCOUNT_NAME" "$ACCOUNT_NAME" --project ./src/CosmicWorks.csproj
-        dotnet user-secrets set "LOCATION" "$LOCATION" --project ./src/CosmicWorks.csproj
-        dotnet user-secrets set "ACCOUNT_ENDPOINT" "$ACCOUNT_ENDPOINT" --project ./src/CosmicWorks.csproj
+        # Set OWNER_EMAIL from the signed-in Azure CLI identity
+        $currentUser = (az account show --query user.name -o tsv 2>$null)
+        if ([string]::IsNullOrWhiteSpace($currentUser)) {
+          Write-Error "Unable to determine signed-in user via 'az account show'. Run 'az login' and retry."
+          exit 1
+        }
+        Write-Host "Setting OWNER_EMAIL to: $currentUser"
+        azd env set OWNER_EMAIL "$currentUser" | Out-Null
+        $env:OWNER_EMAIL = $currentUser
+    posix:
       shell: sh
+      continueOnError: false
+      interactive: true
+      run: |
+        # Set OWNER_EMAIL from the signed-in Azure CLI identity
+        CURRENT_USER=$(az account show --query user.name -o tsv 2>/dev/null)
+        if [ -z "$CURRENT_USER" ]; then
+          echo "ERROR: Unable to determine signed-in user via 'az account show'. Run 'az login' and retry." 1>&2
+          exit 1
+        fi
+        echo "Setting OWNER_EMAIL to: $CURRENT_USER"
+        azd env set OWNER_EMAIL "$CURRENT_USER" >/dev/null
+        export OWNER_EMAIL="$CURRENT_USER"
+  postdeploy:
+    windows:
+      shell: pwsh
+      run: |
+        Write-Host "Setting up appsettings.development.json"
+
+        $subscriptionId = $env:AZURE_SUBSCRIPTION_ID
+        $resourceGroup = $env:AZURE_RESOURCE_GROUP
+        $location = $env:AZURE_LOCATION
+        $endpoint = $env:AZURE_COSMOSDB_ENDPOINT
+        $accountName = $env:AZURE_COSMOSDB_ACCOUNT_NAME
+
+        if ([string]::IsNullOrWhiteSpace($subscriptionId) -or
+            [string]::IsNullOrWhiteSpace($resourceGroup) -or
+            [string]::IsNullOrWhiteSpace($location) -or
+            [string]::IsNullOrWhiteSpace($endpoint) -or
+            [string]::IsNullOrWhiteSpace($accountName)) {
+          Write-Error "Missing required AZD IaC outputs. Re-run 'azd provision' (or 'azd up') so infra/main.bicep outputs are available: AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, AZURE_LOCATION, AZURE_COSMOSDB_ENDPOINT, AZURE_COSMOSDB_ACCOUNT_NAME."
+          exit 1
+        }
+
+        $appSettingsContent = @{
+          SUBSCRIPTION_ID = $subscriptionId
+          RESOURCE_GROUP = $resourceGroup
+          LOCATION = $location
+          ACCOUNT_NAME = $accountName
+          ACCOUNT_ENDPOINT = $endpoint
+        } | ConvertTo-Json -Depth 5
+
+        $projectPath = "./src"
+        $appSettingsPath = "$projectPath/appsettings.development.json"
+        New-Item -ItemType Directory -Path $projectPath -Force | Out-Null
+        Set-Content -Path $appSettingsPath -Value $appSettingsContent
+        Write-Host "Created appsettings.development.json in $projectPath"
+      continueOnError: false
+      interactive: true
+    posix:
+      shell: sh
+      run: |
+        echo "Setting up appsettings.development.json"
+
+        subscriptionId="${AZURE_SUBSCRIPTION_ID}"
+        resourceGroup="${AZURE_RESOURCE_GROUP}"
+        location="${AZURE_LOCATION}"
+        endpoint="${AZURE_COSMOSDB_ENDPOINT}"
+        accountName="${AZURE_COSMOSDB_ACCOUNT_NAME}"
+
+        if [ -z "$subscriptionId" ] || [ -z "$resourceGroup" ] || [ -z "$location" ] || [ -z "$endpoint" ] || [ -z "$accountName" ]; then
+          echo "ERROR: Missing required AZD IaC outputs. Re-run 'azd provision' (or 'azd up') so infra/main.bicep outputs are available: AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, AZURE_LOCATION, AZURE_COSMOSDB_ENDPOINT, AZURE_COSMOSDB_ACCOUNT_NAME." 1>&2
+          exit 1
+        fi
+
+        appSettingsContent=$(cat <<EOF
+        {
+          "SUBSCRIPTION_ID": "${subscriptionId}",
+          "RESOURCE_GROUP": "${resourceGroup}",
+          "LOCATION": "${location}",
+          "ACCOUNT_NAME": "${accountName}",
+          "ACCOUNT_ENDPOINT": "${endpoint}"
+        }
+        EOF
+        )
+
+        projectPath="./src"
+        appSettingsPath="$projectPath/appsettings.development.json"
+        mkdir -p "$projectPath"
+        printf '%s\n' "$appSettingsContent" > "$appSettingsPath"
+        echo "Created appsettings.development.json in $projectPath"
       continueOnError: false
       interactive: true

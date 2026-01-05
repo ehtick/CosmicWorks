@@ -7,21 +7,42 @@ using System.Net.Http;
 using Newtonsoft.Json;
 using Microsoft.Azure.Cosmos;
 
-
-
 namespace CosmicWorks
 {
     class Deployment
     {
+        private const string GitDataPath = "https://api.github.com/repos/AzureCosmosDB/CosmicWorks/contents/data/";
+        private static readonly HttpClient Http = CreateHttpClient();
 
-        private static string gitdatapath = "https://api.github.com/repos/AzureCosmosDB/CosmicWorks/contents/data/";
+        private static HttpClient CreateHttpClient()
+        {
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("User-Agent", "cosmicworks-samples");
+            return client;
+        }
+
+        private static string GetRepoRoot()
+        {
+            var start = new DirectoryInfo(AppContext.BaseDirectory);
+            for (DirectoryInfo dir = start; dir != null; dir = dir.Parent)
+            {
+                if (File.Exists(Path.Combine(dir.FullName, "CosmicWorks.sln")) || File.Exists(Path.Combine(dir.FullName, "azure.yaml")))
+                {
+                    return dir.FullName;
+                }
+            }
+
+            return Directory.GetCurrentDirectory();
+        }
+
+        private static string GetLocalDataFolder(string databaseName) => Path.Combine(GetRepoRoot(), "data", databaseName);
 
 
         public static async Task DeleteAllDatabases(CosmosManagement management)
         {
             Console.WriteLine("Deleting all databases...");
             
-            await management.DeleteAllCosmosDBDatabaes();
+            await management.DeleteAllCosmosDBDatabases();
             
             Console.WriteLine("All databases deleted. Press any key to continue...");
             Console.ReadKey();
@@ -89,10 +110,10 @@ namespace CosmicWorks
             cosmosDBClient.ClientOptions.AllowBulkExecution = true;
             cosmosDBClient.ClientOptions.EnableContentResponseOnWrite = false;
 
-            LoadContainersFromFolder(cosmosDBClient, "database-v1", "database-v1");
-            LoadContainersFromFolder(cosmosDBClient, "database-v2", "database-v2");
-            LoadContainersFromFolder(cosmosDBClient, "database-v3", "database-v3");
-            LoadContainersFromFolder(cosmosDBClient, "database-v4", "database-v4");
+            await LoadContainersFromFolder(cosmosDBClient, "database-v1", "database-v1");
+            await LoadContainersFromFolder(cosmosDBClient, "database-v2", "database-v2");
+            await LoadContainersFromFolder(cosmosDBClient, "database-v3", "database-v3");
+            await LoadContainersFromFolder(cosmosDBClient, "database-v4", "database-v4");
 
             cosmosDBClient.ClientOptions.AllowBulkExecution = false;
             cosmosDBClient.ClientOptions.EnableContentResponseOnWrite = true;
@@ -107,19 +128,17 @@ namespace CosmicWorks
 
         private static async Task GetFilesFromRepo(string databaseName, bool force = false)
         {
-            string folder = "data" + Path.DirectorySeparatorChar + databaseName;
-            string url = gitdatapath + databaseName;
-            Console.WriteLine("Geting file info from repo");
-            HttpClient httpClient = new HttpClient();
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Add("User-Agent", "cosmicworks-samples-cosmosClient");
+            string folder = GetLocalDataFolder(databaseName);
+            string url = GitDataPath + databaseName;
+            Console.WriteLine("Getting file info from repo");
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
             if (!Directory.Exists(folder))
             {
                 Directory.CreateDirectory(folder);
             }
 
-            HttpResponseMessage response = await httpClient.SendAsync(request);
+            HttpResponseMessage response = await Http.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine("Error reading sample data from GitHub");
@@ -127,9 +146,9 @@ namespace CosmicWorks
                 return;
             }
 
-            String directoryJson = await response.Content.ReadAsStringAsync(); ;
+            string directoryJson = await response.Content.ReadAsStringAsync();
 
-            GitFileInfo[] dirContents = JsonConvert.DeserializeObject<GitFileInfo[]>(directoryJson);
+            GitFileInfo[] dirContents = JsonConvert.DeserializeObject<GitFileInfo[]>(directoryJson) ?? Array.Empty<GitFileInfo>();
             var downloadTasks = new List<Task>();
 
             foreach (GitFileInfo file in dirContents)
@@ -137,17 +156,16 @@ namespace CosmicWorks
                 if (file.type == "file")
                 {
                     Console.WriteLine($"File {file.name} {file.size}");
-                    var filePath = folder + Path.DirectorySeparatorChar + file.name;
+                    var filePath = Path.Combine(folder, file.name);
 
-
-                    Boolean downloadFile = true;
+                    bool downloadFile = true;
                     if (File.Exists(filePath))
                     {
-                        if (new System.IO.FileInfo(filePath).Length == file.size)
+                        if (new FileInfo(filePath).Length == file.size)
                         {
                             Console.WriteLine("    File exists and matches size");
                             downloadFile = false;
-                            if (force == true) downloadFile = true;
+                            if (force) downloadFile = true;
                         }
                     }
 
@@ -160,42 +178,52 @@ namespace CosmicWorks
                 }
             }
 
-            Task downloadTask = Task.WhenAll(downloadTasks);
             try
             {
-                downloadTask.Wait();
+                await Task.WhenAll(downloadTasks);
             }
-            catch (AggregateException)
+            catch (Exception)
             {
-
+                // Handled via per-task exception output below
             }
 
-            if (downloadTask.Status == TaskStatus.Faulted)
+            var anyFaulted = false;
+            foreach (var task in downloadTasks)
             {
-                Console.WriteLine("Files failed to download");
-                foreach (var task in downloadTasks)
+                if (task.Status == TaskStatus.Faulted)
                 {
+                    anyFaulted = true;
                     Console.WriteLine("Task {0}: {1}", task.Id, task.Status);
-                    Console.WriteLine(task.Exception.ToString());
+                    if (task.Exception is not null)
+                    {
+                        Console.WriteLine(task.Exception);
+                    }
                 }
             }
-            if (downloadTask.Status == TaskStatus.RanToCompletion) Console.WriteLine("Files download sucessfully");
+
+            if (anyFaulted)
+            {
+                Console.WriteLine("Files failed to download");
+                return;
+            }
+
+            Console.WriteLine("Files downloaded successfully");
         }
 
-        private static void LoadContainersFromFolder(CosmosClient client, string folderName, string databaseName)
+        private static async Task LoadContainersFromFolder(CosmosClient client, string folderName, string databaseName)
         {
             Console.WriteLine("Preparing to load containers");
 
             Database database = client.GetDatabase(databaseName);
 
-            string folder = "data" + Path.DirectorySeparatorChar + folderName;            
+            string folder = GetLocalDataFolder(folderName);
             string[] fileEntries = Directory.GetFiles(folder);
             
             List<Task> concurrentLoads = new List<Task>();
 
             foreach (string fileName in fileEntries)
             {
-                var containerName = fileName.Split(Path.DirectorySeparatorChar)[2];
+                var containerName = Path.GetFileName(fileName);
                 Console.WriteLine($"    Container {containerName} from {fileName}");
                 try
                 {
@@ -204,56 +232,56 @@ namespace CosmicWorks
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error connecting to container {containerName} ");
+                    Console.WriteLine($"Error connecting to container {containerName}");
                     Console.WriteLine(ex.ToString());
                 }
             }
-            Task concurrentLoad = Task.WhenAll(concurrentLoads);
+
             try
             {
-                concurrentLoad.Wait();
+                await Task.WhenAll(concurrentLoads);
             }
-            catch (AggregateException)
+            catch (Exception)
             {
-
+                // Details written below
             }
 
-            if (concurrentLoad.Status == TaskStatus.Faulted)
-            {
-                Console.WriteLine("Sample data load failed");
-            }
-
+            var anyFaulted = false;
             foreach (var task in concurrentLoads)
             {
                 Console.WriteLine("Task {0}: {1}", task.Id, task.Status);
                 if (task.Status == TaskStatus.Faulted)
                 {
+                    anyFaulted = true;
                     Console.WriteLine($"Task {task.Id} {task.Exception}");
 
                 }
+            }
+
+            if (anyFaulted)
+            {
+                Console.WriteLine("Sample data load failed");
             }
 
         }
 
         private static async Task LoadContainerFromFile(Container container, string file)
         {
-            using (StreamReader streamReader = new StreamReader(file))
+            using var streamReader = new StreamReader(file);
+            string itemsJson = await streamReader.ReadToEndAsync();
+            dynamic itemsArray = JsonConvert.DeserializeObject(itemsJson);
+            List<Task> tasks = new List<Task>();
+            foreach (var item in itemsArray)
             {
-                string itemsJson = streamReader.ReadToEnd();
-                dynamic itemsArray = JsonConvert.DeserializeObject(itemsJson);
-                List<Task> tasks = new List<Task>();
-                foreach (var item in itemsArray)
-                {
-                    tasks.Add(CreateItemWithRetryAsync(container, item));
-                }
-                await Task.WhenAll(tasks);
+                tasks.Add(CreateItemWithRetryAsync(container, item));
             }
+
+            await Task.WhenAll(tasks);
         }
 
         private static async Task CreateItemWithRetryAsync(Container container, dynamic record)
         {
-            bool retry = true;
-            while (retry)
+            while (true)
             {
                 try
                 {
@@ -262,7 +290,7 @@ namespace CosmicWorks
                 }
                 catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                 {
-                    int waitTime = ex.RetryAfter.HasValue ? ex.RetryAfter.Value.Milliseconds : 1000;
+                    int waitTime = ex.RetryAfter.HasValue ? (int)ex.RetryAfter.Value.TotalMilliseconds : 1000;
                     Console.WriteLine($"Rate limited. Waiting for {waitTime}ms before retrying...");
                     await Task.Delay(waitTime);
                 }
@@ -271,17 +299,12 @@ namespace CosmicWorks
 
         private static async Task HttpGetFile(string url, string filename)
         {
-            using (HttpClient client = new HttpClient())
-            {
-                using (HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
-                using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
-                {
-                    using (Stream streamToWriteTo = File.Open(filename, FileMode.Create))
-                    {
-                        await streamToReadFrom.CopyToAsync(streamToWriteTo);
-                    }
-                }
-            }
+            using HttpResponseMessage response = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+
+            await using Stream streamToReadFrom = await response.Content.ReadAsStreamAsync();
+            await using Stream streamToWriteTo = File.Open(filename, FileMode.Create);
+            await streamToReadFrom.CopyToAsync(streamToWriteTo);
         }
 
         class GitFileInfo

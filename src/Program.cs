@@ -1,58 +1,73 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
+﻿using Azure.Identity;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Azure.Identity;
-using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CosmicWorks
 {
     class Program
     {
 
-        static CosmosClient cosmosClient;
-        static CosmosManagement cosmosManagement;
-        static ChangeFeed changeFeed;
+        private readonly CosmosClient cosmosClient;
+        private readonly CosmosManagement cosmosManagement;
+        private readonly ChangeFeed changeFeed;
+
+        public Program(CosmosClient cosmosClient, CosmosManagement cosmosManagement, ChangeFeed changeFeed)
+        {
+            this.cosmosClient = cosmosClient;
+            this.cosmosManagement = cosmosManagement;
+            this.changeFeed = changeFeed;
+        }
 
         public static void AddConfiguration(IConfigurationBuilder config)
         {
-            config.AddJsonFile(@"appSettings.json", optional: false, reloadOnChange: true)
-            .AddUserSecrets<Program>();
-
-            var configuration = config.Build();
-            var uri = configuration["ACCOUNT_ENDPOINT"];
-
-            // Create the CosmosClient instance
-            cosmosClient = new CosmosClient(uri, new DefaultAzureCredential());
-
-            // Create the CosmosManagement instance
-            cosmosManagement = new CosmosManagement(configuration);
-
+            config
+                .AddJsonFile(@"appSettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile(@"appsettings.development.json", optional: true, reloadOnChange: true);
         }
 
         public static async Task Main(string[] args)
         {
-            var host = Host.CreateDefaultBuilder(args)
+            using IHost host = Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((context, config) =>
                 {
                     AddConfiguration(config);
                 })
+                .ConfigureServices((context, services) =>
+                {
+                    var configuration = context.Configuration;
+                    var uri = configuration["ACCOUNT_ENDPOINT"];
+
+                    if (string.IsNullOrWhiteSpace(uri))
+                    {
+                        throw new InvalidOperationException(
+                            "Missing required configuration value 'ACCOUNT_ENDPOINT'. " +
+                            "Ensure 'src/appsettings.development.json' exists (created by 'azd up') and contains ACCOUNT_ENDPOINT.");
+                    }
+
+                    services.AddSingleton(new CosmosClient(uri, new DefaultAzureCredential()));
+                    services.AddSingleton(new CosmosManagement(configuration));
+                    services.AddSingleton<ChangeFeed>();
+                    services.AddSingleton<Program>();
+                })
                 .Build();
 
-            await RunApp();
+            var program = host.Services.GetRequiredService<Program>();
+            await program.RunApp();
         }
-        
-        public static async Task QueryCustomer()
+
+        public async Task QueryCustomer()
         {
             Database database = cosmosClient.GetDatabase("database-v2");
             Container container = database.GetContainer("customer");
 
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
 
             //Get a customer with a query
             string sql = $"SELECT * FROM c WHERE c.id = @id";
@@ -81,12 +96,12 @@ namespace CosmicWorks
             }
         }
 
-        public static async Task GetCustomer()
+        public async Task GetCustomer()
         {
             Database database = cosmosClient.GetDatabase("database-v2");
             Container container = database.GetContainer("customer");
 
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
 
             Console.WriteLine("Point Read for a single customer\n");
 
@@ -102,7 +117,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task ListAllProductCategories()
+        public async Task ListAllProductCategories()
         {
             Database database = cosmosClient.GetDatabase("database-v2");
             Container container = database.GetContainer("productCategory");
@@ -132,7 +147,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task QueryProductsByCategoryId()
+        public async Task QueryProductsByCategoryId()
         {
             Database database = cosmosClient.GetDatabase("database-v3");
             Container container = database.GetContainer("product");
@@ -166,7 +181,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task QueryProductsForCategory()
+        public async Task QueryProductsForCategory()
         {
             Database database = cosmosClient.GetDatabase("database-v3");
             Container container = database.GetContainer("product");
@@ -199,7 +214,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task UpdateProductCategory()
+        public async Task UpdateProductCategory()
         {
             Database database = cosmosClient.GetDatabase("database-v3");
             Container container = database.GetContainer("productCategory");
@@ -224,7 +239,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task RevertProductCategory()
+        public async Task RevertProductCategory()
         {
             Database database = cosmosClient.GetDatabase("database-v3");
             Container container = database.GetContainer("productCategory");
@@ -247,12 +262,12 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task QuerySalesOrdersByCustomerId()
+        public async Task QuerySalesOrdersByCustomerId()
         {
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
 
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
 
             string sql = "SELECT * from c WHERE c.type = 'salesOrder' and c.customerId = @customerId";
 
@@ -278,12 +293,12 @@ namespace CosmicWorks
 
         }
 
-        public static async Task QueryCustomerAndSalesOrdersByCustomerId()
+        public async Task QueryCustomerAndSalesOrdersByCustomerId()
         {
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
 
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
 
             string sql = "SELECT * from c WHERE c.customerId = @customerId";
 
@@ -327,13 +342,13 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task CreateNewOrderAndUpdateCustomerOrderTotal()
+        public async Task CreateNewOrderAndUpdateCustomerOrderTotal()
         {
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
 
             //Get the customer
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
             ItemResponse<CustomerV4> response = await container.ReadItemAsync<CustomerV4>(
                 id: customerId,
                 partitionKey: new PartitionKey(customerId)
@@ -386,12 +401,12 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task DeleteOrder()
+        public async Task DeleteOrder()
         {
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
 
-            string customerId = "FFD0DD37-1F0E-4E2E-8FAC-EAF45B0E9447";
+            string customerId = "77A64329-1C2A-4BE4-867C-56B40962EC4E";
             string orderId = "5350ce31-ea50-4df9-9a48-faff97675ac5";
 
             ItemResponse<CustomerV4> response = await container.ReadItemAsync<CustomerV4>(
@@ -417,7 +432,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task GetTop10Customers()
+        public async Task GetTop10Customers()
         {
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
@@ -452,7 +467,7 @@ namespace CosmicWorks
             Console.WriteLine($"{JObject.FromObject(obj).ToString()}\n");
         }
 
-        public static async Task RunApp()
+        public async Task RunApp()
         {
             // Your existing code to run the application
             bool exit = false;
@@ -486,68 +501,74 @@ namespace CosmicWorks
 
                 switch (key)
                 {
-                    case 'a':
+                    case 'a': //Query for single customer
                         Console.Clear();
                         await QueryCustomer();
                         break;
-                    case 'b':
+                    case 'b': //Point read for single customer
                         Console.Clear();
                         await GetCustomer();
                         break;
-                    case 'c':
+                    case 'c': //List all product categories
                         Console.Clear();
                         await ListAllProductCategories();
                         break;
-                    case 'd':
+                    case 'd': //Query products by category id
                         Console.Clear();
                         await QueryProductsByCategoryId();
                         break;
-                    case 'e':
+                    case 'e': //Update product category name
                         Console.Clear();
+
+                        // Start Change Feed Procesor
+                        await changeFeed.StartChangeFeedProcessorAsync();
+
                         await QueryProductsForCategory();
                         await UpdateProductCategory();
                         await QueryProductsForCategory();
                         await RevertProductCategory();
                         break;
-                    case 'f':
+                    case 'f': //Query orders by customer id
                         Console.Clear();
                         await QuerySalesOrdersByCustomerId();
                         break;
-                    case 'g':
+                    case 'g': //Query for customer and all orders
                         Console.Clear();
                         await QueryCustomerAndSalesOrdersByCustomerId();
                         break;
-                    case 'h':
+                    case 'h': //Create new order and update order total
                         Console.Clear();
                         await CreateNewOrderAndUpdateCustomerOrderTotal();
                         break;
-                    case 'i':
+                    case 'i': //Delete order and update order total
                         Console.Clear();
                         await DeleteOrder();
                         break;
-                    case 'j':
+                    case 'j': //Query top 10 customers
                         Console.Clear();
                         await GetTop10Customers();
                         break;
-                    case 'k':
-                        // Upload data to containers
+                    case 'k': // Upload data to containers
+
+                        // Stop Change Feed Processor if running
+                        await changeFeed.StopChangeFeedProcessorAsync();
+
                         await Deployment.LoadData(cosmosClient);
                         Console.Clear();
                         break;
-                    case 'l':
-                        // Delete databases and containers
+                    case 'l': // Delete databases and containers
+                        
+                        // Stop Change Feed Processor if running    
+                        await changeFeed.StopChangeFeedProcessorAsync();
+                        
                         await Deployment.DeleteAllDatabases(cosmosManagement);
                         Console.Clear();
                         break;
-                    case 'm':
-                        // Create databases and containers
+                    case 'm': // Create databases and containers
                         await Deployment.CreateDatabaseAndContainers(cosmosManagement);
                         Console.Clear();
                         break;
                     case 'n':
-                        // Create the ChangeFeed instance
-                        changeFeed = new ChangeFeed(cosmosClient);
-                        
                         // Start Change Feed Procesor
                         await changeFeed.StartChangeFeedProcessorAsync();
                         Console.Clear();

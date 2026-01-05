@@ -1,10 +1,6 @@
 ﻿using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,10 +9,10 @@ namespace CosmicWorks
     public class ChangeFeed
     {
         private ChangeFeedProcessor _changeFeedProcessor;
-        private CosmosClient _cosmosClient;
-        private Container _monitoredContainer;
-        private Container _outputContainer;
-        private Container _leasesContainer;
+        private readonly CosmosClient _cosmosClient;
+        private readonly Container _monitoredContainer;
+        private readonly Container _outputContainer;
+        private readonly Container _leasesContainer;
 
         public ChangeFeed(CosmosClient cosmosClient)
         {
@@ -42,6 +38,20 @@ namespace CosmicWorks
             await _changeFeedProcessor.StartAsync();
 
             return _changeFeedProcessor;
+        }
+
+        //Stop Cosmos DB Change Feed Processor
+        //This method is called before deleting databases/containers and loading data
+        public async Task StopChangeFeedProcessorAsync()
+        {
+            try
+            {
+                await _changeFeedProcessor.StopAsync();
+            }
+            catch(Exception)
+            {
+                //ignore
+            }
         }
 
         //Implement the HandleChangesAsync method

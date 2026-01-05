@@ -5,8 +5,6 @@ using Azure.ResourceManager;
 using Azure.ResourceManager.CosmosDB;
 using Azure.ResourceManager.CosmosDB.Models;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Graph;
-using Microsoft.Graph.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,26 +13,42 @@ namespace CosmicWorks
 {
     public class CosmosManagement
     {
-        private readonly string _subscriptionId = "your-subscription-id";
-        private readonly string _resourceGroupName = "your-resource-group-name";
-        private readonly string _location = "East US";
-        private readonly string _accountName = "your-cosmosdb-account-name";
-        private readonly TokenCredential _credential;
+        private readonly string _subscriptionId;
+        private readonly string _resourceGroupName;
+        private readonly string _location;
+        private readonly string _accountName;
+        private readonly DefaultAzureCredential _credential;
         private readonly ArmClient _armClient;
 
 
         public CosmosManagement(IConfiguration config)
         {
-            _subscriptionId = config["SUBSCRIPTION_ID"]!;
-            _resourceGroupName = config["RESOURCE_GROUP"]!;
-            _accountName = config["ACCOUNT_NAME"]!;
-            _location = config["LOCATION"]!;
+            if (config is null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            _subscriptionId = GetRequiredConfigValue(config, "SUBSCRIPTION_ID");
+            _resourceGroupName = GetRequiredConfigValue(config, "RESOURCE_GROUP");
+            _accountName = GetRequiredConfigValue(config, "ACCOUNT_NAME");
+            _location = GetRequiredConfigValue(config, "LOCATION");
 
             _credential = new DefaultAzureCredential();
             _armClient = new ArmClient(_credential);
         }
 
-        public async Task DeleteAllCosmosDBDatabaes()
+        private static string GetRequiredConfigValue(IConfiguration config, string key)
+        {
+            var value = config[key];
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new InvalidOperationException($"Missing required configuration value '{key}'.");
+            }
+
+            return value;
+        }
+
+        public async Task DeleteAllCosmosDBDatabases()
         {
             //Get the account
             ResourceIdentifier resourceId = CosmosDBAccountResource.CreateResourceIdentifier(_subscriptionId, _resourceGroupName, _accountName);
@@ -155,15 +169,18 @@ namespace CosmicWorks
             await CreateOrUpdateRoleAssignment(await GetBuiltInDataContributorRoleDefinitionAsync());
         }
 
-        private async Task CreateOrUpdateRoleAssignment(ResourceIdentifier roleDefintionId)
+        private async Task CreateOrUpdateRoleAssignment(ResourceIdentifier roleDefinitionId)
         {
 
             //Get the principal ID of the current logged-in user
             Guid? principalId = await GetCurrentUserPrincipalIdAsync();
 
-            //Select the type of role to assign
-            //ResourceIdentifier roleDefintionId = await GetBuiltInDataContributorRoleDefinitionAsync();
-            //ResourceIdentifier roleDefinitionId = await CreateOrUpdateCustomRoleDefinition();
+            if (principalId is null)
+            {
+                throw new InvalidOperationException(
+                    "Unable to determine current principal id (OID) from Azure credential. " +
+                    "Ensure you're logged in (for example: 'az login') and your credential provides an 'oid' claim.");
+            }
 
             //Select the scope of the role permissions
             string assignableScope = GetAssignableScope(Scope.Account);
@@ -171,7 +188,7 @@ namespace CosmicWorks
             //Role assignment properties
             CosmosDBSqlRoleAssignmentCreateOrUpdateContent properties = new CosmosDBSqlRoleAssignmentCreateOrUpdateContent()
             {
-                RoleDefinitionId = roleDefintionId,
+                RoleDefinitionId = roleDefinitionId,
                 Scope = assignableScope,
                 PrincipalId = principalId
             };

@@ -1,14 +1,15 @@
 # Cosmic Works
 
-How to migrate a relational data model to Azure Cosmos DB, a distributed, horizontally scalable, NoSQL database.
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=AzureCosmosDB/CosmicWorks)
+[![Run with Docker](https://img.shields.io/badge/Run%20with-Docker-blue)](https://github.com/AzureCosmosDB/CosmicWorks#run-with-docker)
+[![Deploy with AZD](https://img.shields.io/badge/Deploy%20with-Azure%20Developer%20CLI-blue)](https://github.com/AzureCosmosDB/CosmicWorks#deploy-to-azure-azd)
 
 This sample demonstrates how to migrate a relational database to a distributed, NoSQL database like Azure Cosmos DB.
-This repo contains a Powerpoint presentation and a .NET Project that represents the demos for this presentation. You can watch
-this presentation from [Igloo Conf 2022](https://youtu.be/TvQEG52eVrI?si=rbXrAV_SwwtbCIX_&t=49)
+This repo contains a Powerpoint presentation and a .NET Project that represents the demos for this presentation. You can watch this presentation from [Igloo Conf 2022](https://youtu.be/TvQEG52eVrI?si=rbXrAV_SwwtbCIX_&t=49)
 
 The main components of this sample include:
 
-* **Program.cs**: A console application. The menu items coincide with demos for the presentation that highlight the evolution of the data models from v1 to v4.
+* **Program.cs**: A console application. The menu items coincide with demos for the presentation that highlight the evolution of the data models from a normalized relational data model (v1) to a fully denormalized NoSQL data model (v4).
 
 * **ChangeFeed.cs**: The class implements Cosmos DB's change feed processor to monitor the product categories container for changes and then propagates those to the products container. This highlights how to maintain referential integrity between entities.
 
@@ -16,37 +17,115 @@ The main components of this sample include:
 
 * **CosmosManagement.cs**: This class contains the Cosmos DB management SDK classes used to delete and recreate the databases and containers.
 
-## Steps to setup
+## Quick Start Options
 
-This sample uploads a large amount of data. If you have slow upload speeds such as a residential cable modem, it is recommended to open this repository in GitHub Codespaces and deploy the Azure services or git clone to a VM in the same region you deploy to. Below are the two methods for setup.
+Choose one of these options to get started:
 
-### Run Locally
-
-1. Fork then git clone this repository to your local machine.
-1. Open a terminal, type azd auth login. 
-1. Type `azd up` and deploy the Cosmos resources. (This is a serverless account so there is no cost to create these resources.)
-1. When the deployment is complete, open the Cosmic Works solution file.
-1. On the main menu, press 'K' to load the data. 
-    1. This can take **up to 60 minutes** when run locally over low bandwidth connections and may time-out requiring you to run `azd down`, then `azd up` again and start over.
-    1. You will see retries as it will ingest data faster than Serverless accounts allow for.
-    1. Best performance is running in a GitHub Codespace or on a VM in the same region the Cosmos account was provisioned in.
-1. After the data is loaded, return to Visual Studio, put any breakpoints for any of the functions you want to step through.
-1. Press F5 to start a debug session.
-
+1. **[Run in GitHub Codespaces](#run-in-codespaces)** - The fastest way to get started with zero local setup
+2. **[Run with Docker](#run-with-docker)** - Run locally in a container with minimal setup
+3. **[Run locally](#run-locally)** - Traditional local development experience
+4. **[Deploy to Azure (AZD)](#deploy-to-azure-azd)** - Deploy to Azure and run with real Azure Cosmos DB resources
 
 ### Run in CodeSpaces
 
-1. Create a new Codespace for this repository.
-1. Open a terminal, type azd auth login. 
-1. Type `azd up` and deploy the Cosmos resources. (This is a serverless account so there is no cost to create these resources.)
-1. When the deployment is complete, navigate to workspaces/CosmicWorks/src folder by typing `cd src`.
-1. Then type `dotnet run` in the terminal to start the application.
-    1. You may want to make the terminal larger on your screen by dragging it up or clicking the up carrot to maximize the terminal panel.
-1. On the main menu, press 'k' to load the data. 
-    1. This takes about **7 minutes on a 2 core CodeSpace** to run and you will see retries as it will ingest data faster than Serverless accounts allow for.
-    1. After the data is loaded, if you want to run this solution locally, follow the steps to Run Locally. In Visual Studio, open secrets.json and copy and paste the values from the env file in .azure folder into secrets.json so the app can connect to the deployed Cosmos DB account.
-1. After the data is loaded, open Program.cs and put any breakpoints for any of the functions you want to step through.
-1. Press F5 to start a debug session.
+1. Click the **Open in GitHub Codespaces** button at the top of this README
+1. Wait for the Codespace to initialize (this may take a few minutes)
+1. Deploy to Azure using [Deploy to Azure (AZD)](#deploy-to-azure-azd)
+1. Once deployed, open the integrated terminal and run:
+
+   ```bash
+   cd src
+   dotnet run
+   ```
+
+GitHub Codespaces provides the best performance for data loading since it runs in the cloud, closer to the Azure Cosmos DB resources.
+
+## Run with Docker
+
+To run CosmicWorks in a containerized environment:
+
+1. Make sure [Docker](https://www.docker.com/products/docker-desktop/) is installed on your system
+2. Clone the repository:
+
+   ```bash
+   git clone https://github.com/AzureCosmosDB/CosmicWorks.git
+   cd CosmicWorks
+   ```
+
+3. Deploy to Azure first (this creates the necessary appsettings.development.json file):
+
+   See [Deploy to Azure (AZD)](#deploy-to-azure-azd).
+
+4. Build and run the container:
+
+   ```bash
+   docker-compose up --build
+   ```
+
+You can also build and run the Docker container manually:
+
+```bash
+docker build -t cosmicworks .
+docker run -it --volume "./src/appsettings.development.json:/app/appsettings.development.json:ro" cosmicworks
+```
+
+## Run Locally
+
+To run CosmicWorks directly on your local machine:
+
+1. Ensure [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) is installed
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/AzureCosmosDB/CosmicWorks.git
+   cd CosmicWorks
+   ```
+
+1. Deploy to Azure (this creates the necessary appsettings.development.json file):
+
+   See [Deploy to Azure (AZD)](#deploy-to-azure-azd).
+
+1. Run the application:
+
+   ```bash
+   cd src
+   dotnet run
+   ```
+
+1. On the main menu, press 'k' to load data
+1. Explore the different functions by pressing the corresponding menu keys
+
+## Deploy to Azure (AZD)
+
+This option deploys a serverless Cosmos DB account with all required databases and containers, and sets up RBAC permissions for both a managed identity and the current user.
+
+The deployment will automatically:
+
+1. Create a serverless Cosmos DB account
+1. Set up RBAC permissions
+1. Create an `appsettings.development.json` file in the *src* folder
+1. Configure everything needed to run the application
+
+### Deploy steps
+
+Run these commands once per environment (and any time you need to reprovision):
+
+```bash
+azd auth login
+azd init
+azd up
+```
+
+### Managing Costs
 
 > [!IMPORTANT]
-> This solution doesn't charge for RU when not in use but there are data storage costs. If you are not going to run this sample for some time it is recommended to return to the main menu of the application and select option 'L' to delete all the databases. When you return you can recreate these with option 'M', then reload the data with option 'K'
+> This solution doesn't charge for RU when not in use but there are data storage costs of $0.25 per container per month. If you are not going to run this sample for some time you can return to the main menu of the application and select option 'L' to delete all the databases. When you return you can recreate these with option 'M', then reload the data with option 'K'
+
+## Source Data
+
+The sample data represents 4 versions of the Cosmos DB databases as they progress through the migration from a relational database to a highly scalable NoSQL database:
+
+* [Cosmic Works version 1](https://github.com/AzureCosmosDB/CosmicWorks/tree/main/data/database-v1)
+* [Cosmic Works version 2](https://github.com/AzureCosmosDB/CosmicWorks/tree/main/data/database-v2)
+* [Cosmic Works version 3](https://github.com/AzureCosmosDB/CosmicWorks/tree/main/data/database-v3)
+* [Cosmic Works version 4](https://github.com/AzureCosmosDB/CosmicWorks/tree/main/data/database-v4)
