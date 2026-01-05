@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace models
+namespace CosmicWorks
 {
 
     public class CustomerV2

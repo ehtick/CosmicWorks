@@ -13,6 +13,9 @@ param location string
 @description('The name prefix for all resources')
 param namePrefix string = 'cosmicworks'
 
+@description('Owner tag for resource tagging')
+param owner string = 'defaultuser@example.com'
+
 @description('Id of the user or app to assign application roles')
 param principalId string
 
@@ -21,6 +24,7 @@ var uniqueSuffix = uniqueString(subscription().id, environmentName, location, pr
 
 var tags = {
   'azd-env-name': environmentName
+  owner: owner
 }
 
 resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
@@ -36,6 +40,7 @@ module identity './modules/identity.bicep' = {
     location: location
     namePrefix: namePrefix
     uniqueSuffix: uniqueSuffix
+    tags: tags
   }
   scope: rg
 }
@@ -48,9 +53,16 @@ module cosmosDb './modules/cosmos.bicep' = {
     uniqueSuffix: uniqueSuffix
     managedIdentityPrincipalId: identity.outputs.managedIdentityPrincipalId
     currentUserPrincipalId: principalId
+    tags: tags
   }
   scope: rg
 }
 
 // Outputs
-output AZURE_COSMOSDB_ENDPOINT string = cosmosDb.outputs.cosmosDbEndpoint
+// AZD will reliably surface outputs prefixed with AZURE_ as environment variables for hooks.
+output AZURE_SUBSCRIPTION_ID string = subscription().subscriptionId
+output AZURE_RESOURCE_GROUP string = rg.name
+output AZURE_LOCATION string = rg.location
+output AZURE_COSMOSDB_ENDPOINT string = cosmosDb.outputs.cosmosEndpoint
+output AZURE_COSMOSDB_ACCOUNT_NAME string = cosmosDb.outputs.cosmosAccount
+

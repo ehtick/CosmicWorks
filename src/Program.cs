@@ -3,147 +3,66 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-
 namespace CosmicWorks
 {
     class Program
     {
 
-        static CosmosClient cosmosClient;
-        static ChangeFeed changeFeed;
+        private readonly CosmosClient cosmosClient;
+        private readonly CosmosManagement cosmosManagement;
+        private readonly ChangeFeed changeFeed;
+
+        public Program(CosmosClient cosmosClient, CosmosManagement cosmosManagement, ChangeFeed changeFeed)
+        {
+            this.cosmosClient = cosmosClient;
+            this.cosmosManagement = cosmosManagement;
+            this.changeFeed = changeFeed;
+        }
 
         public static void AddConfiguration(IConfigurationBuilder config)
         {
-            config.AddJsonFile(@"appsettings.development.json", optional: false, reloadOnChange: true);
-
-            var configuration = config.Build();
-            var uri = configuration["ACCOUNT_ENDPOINT"];
-
-            // Create the CosmosClient instance
-            cosmosClient = new CosmosClient(uri, new DefaultAzureCredential());
-
-            // Create the ChangeFeed instance
-            changeFeed = new ChangeFeed(cosmosClient);
-
+            config
+                .AddJsonFile(@"appSettings.json", optional: true, reloadOnChange: true)
+                .AddJsonFile(@"appsettings.development.json", optional: true, reloadOnChange: true);
         }
 
         public static async Task Main(string[] args)
         {
-            var host = Host.CreateDefaultBuilder(args)
+            using IHost host = Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((context, config) =>
                 {
                     AddConfiguration(config);
                 })
+                .ConfigureServices((context, services) =>
+                {
+                    var configuration = context.Configuration;
+                    var uri = configuration["ACCOUNT_ENDPOINT"];
+
+                    if (string.IsNullOrWhiteSpace(uri))
+                    {
+                        throw new InvalidOperationException(
+                            "Missing required configuration value 'ACCOUNT_ENDPOINT'. " +
+                            "Ensure 'src/appsettings.development.json' exists (created by 'azd up') and contains ACCOUNT_ENDPOINT.");
+                    }
+
+                    services.AddSingleton(new CosmosClient(uri, new DefaultAzureCredential()));
+                    services.AddSingleton(new CosmosManagement(configuration));
+                    services.AddSingleton<ChangeFeed>();
+                    services.AddSingleton<Program>();
+                })
                 .Build();
 
-            await changeFeed.StartChangeFeedProcessorAsync();
-
-            await RunApp();
-        }
-        public static async Task RunApp()
-        {
-            // Your existing code to run the application
-            bool exit = false;
-            while (exit == false)
-            {
-                Console.Clear();
-                Console.WriteLine($"Cosmos DB Modeling and Partitioning Demos");
-                Console.WriteLine($"-----------------------------------------");
-                Console.WriteLine($"[a]   Query for single customer");
-                Console.WriteLine($"[b]   Point read for single customer");
-                Console.WriteLine($"[c]   List all product categories");
-                Console.WriteLine($"[d]   Query products by category id");
-                Console.WriteLine($"[e]   Update product category name");
-                Console.WriteLine($"[f]   Query orders by customer id");
-                Console.WriteLine($"[g]   Query for customer and all orders");
-                Console.WriteLine($"[h]   Create new order and update order total");
-                Console.WriteLine($"[i]   Delete order and update order total");
-                Console.WriteLine($"[j]   Query top 10 customers");
-                Console.WriteLine($"-------------------------------------------");
-                Console.WriteLine($"[k]   Upload data to containers");
-                Console.WriteLine($"-------------------------------------------");
-                Console.WriteLine($"[x]   Exit");
-
-                ConsoleKeyInfo result = Console.ReadKey(true);
-
-                if (result.KeyChar == 'a')
-                {
-                    Console.Clear();
-                    await QueryCustomer();
-                }
-                else if (result.KeyChar == 'b')
-                {
-                    Console.Clear();
-                    await GetCustomer();
-                }
-                else if (result.KeyChar == 'c')
-                {
-                    Console.Clear();
-                    await ListAllProductCategories();
-                }
-                else if (result.KeyChar == 'd')
-                {
-                    Console.Clear();
-                    await QueryProductsByCategoryId();
-                }
-                else if (result.KeyChar == 'e')
-                {
-                    Console.Clear();
-                    await QueryProductsForCategory();
-                    await UpdateProductCategory();
-                    await QueryProductsForCategory();
-                    await RevertProductCategory();
-                }
-                else if (result.KeyChar == 'f')
-                {
-                    Console.Clear();
-                    await QuerySalesOrdersByCustomerId();
-                }
-                else if (result.KeyChar == 'g')
-                {
-                    Console.Clear();
-                    await QueryCustomerAndSalesOrdersByCustomerId();
-                }
-                else if (result.KeyChar == 'h')
-                {
-                    Console.Clear();
-                    await CreateNewOrderAndUpdateCustomerOrderTotal();
-                }
-                else if (result.KeyChar == 'i')
-                {
-                    Console.Clear();
-                    await DeleteOrder();
-                }
-                else if (result.KeyChar == 'j')
-                {
-                    Console.Clear();
-                    await GetTop10Customers();
-                }
-                else if (result.KeyChar == 'k')
-                {
-                    //Stop Change Feed Processor
-                    await changeFeed.StopChangeFeedProcessorAsync();
-                    //Load data from GitHub
-                    await Dataload.LoadData(cosmosClient);
-                    //Restart Change Feed Processor
-                    await changeFeed.StartChangeFeedProcessorAsync();
-                    Console.Clear();
-                }
-                else if (result.KeyChar == 'x')
-                {
-                    exit = true;
-                }
-            }
+            var program = host.Services.GetRequiredService<Program>();
+            await program.RunApp();
         }
 
-        public static async Task QueryCustomer()
+        public async Task QueryCustomer()
         {
             Database database = cosmosClient.GetDatabase("database-v2");
             Container container = database.GetContainer("customer");
@@ -177,7 +96,7 @@ namespace CosmicWorks
             }
         }
 
-        public static async Task GetCustomer()
+        public async Task GetCustomer()
         {
             Database database = cosmosClient.GetDatabase("database-v2");
             Container container = database.GetContainer("customer");
@@ -198,7 +117,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task ListAllProductCategories()
+        public async Task ListAllProductCategories()
         {
             Database database = cosmosClient.GetDatabase("database-v2");
             Container container = database.GetContainer("productCategory");
@@ -228,7 +147,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task QueryProductsByCategoryId()
+        public async Task QueryProductsByCategoryId()
         {
             Database database = cosmosClient.GetDatabase("database-v3");
             Container container = database.GetContainer("product");
@@ -262,7 +181,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task QueryProductsForCategory()
+        public async Task QueryProductsForCategory()
         {
             Database database = cosmosClient.GetDatabase("database-v3");
             Container container = database.GetContainer("product");
@@ -295,7 +214,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task UpdateProductCategory()
+        public async Task UpdateProductCategory()
         {
             Database database = cosmosClient.GetDatabase("database-v3");
             Container container = database.GetContainer("productCategory");
@@ -320,7 +239,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task RevertProductCategory()
+        public async Task RevertProductCategory()
         {
             Database database = cosmosClient.GetDatabase("database-v3");
             Container container = database.GetContainer("productCategory");
@@ -343,7 +262,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task QuerySalesOrdersByCustomerId()
+        public async Task QuerySalesOrdersByCustomerId()
         {
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
@@ -374,7 +293,7 @@ namespace CosmicWorks
 
         }
 
-        public static async Task QueryCustomerAndSalesOrdersByCustomerId()
+        public async Task QueryCustomerAndSalesOrdersByCustomerId()
         {
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
@@ -423,7 +342,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task CreateNewOrderAndUpdateCustomerOrderTotal()
+        public async Task CreateNewOrderAndUpdateCustomerOrderTotal()
         {
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
@@ -482,7 +401,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task DeleteOrder()
+        public async Task DeleteOrder()
         {
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
@@ -513,7 +432,7 @@ namespace CosmicWorks
             Console.ReadKey();
         }
 
-        public static async Task GetTop10Customers()
+        public async Task GetTop10Customers()
         {
             Database database = cosmosClient.GetDatabase("database-v4");
             Container container = database.GetContainer("customer");
@@ -546,6 +465,119 @@ namespace CosmicWorks
         public static void Print(object obj)
         {
             Console.WriteLine($"{JObject.FromObject(obj).ToString()}\n");
+        }
+
+        public async Task RunApp()
+        {
+            // Your existing code to run the application
+            bool exit = false;
+            while (exit == false)
+            {
+                Console.Clear();
+                Console.WriteLine($"Cosmos DB Modeling and Partitioning Demos");
+                Console.WriteLine($"-----------------------------------------");
+                Console.WriteLine($"[a]   Query for single customer");
+                Console.WriteLine($"[b]   Point read for single customer");
+                Console.WriteLine($"[c]   List all product categories");
+                Console.WriteLine($"[d]   Query products by category id");
+                Console.WriteLine($"[e]   Update product category name");
+                Console.WriteLine($"[f]   Query orders by customer id");
+                Console.WriteLine($"[g]   Query for customer and all orders");
+                Console.WriteLine($"[h]   Create new order and update order total");
+                Console.WriteLine($"[i]   Delete order and update order total");
+                Console.WriteLine($"[j]   Query top 10 customers");
+                Console.WriteLine($"-------------------------------------------");
+                Console.WriteLine($"[k]   Upload data to containers");
+                Console.WriteLine($"[l]   Delete databases and containers");
+                Console.WriteLine($"[m]   Recreate databases and containers");
+                Console.WriteLine($"[n]   Start Change Feed Processor");
+                Console.WriteLine($"-------------------------------------------");
+                Console.WriteLine($"[x]   Exit");
+
+                
+                string input = Console.ReadLine();
+                if (string.IsNullOrEmpty(input)) continue; //Ignore empty input
+                char key = char.ToLower(input[0]);
+
+                switch (key)
+                {
+                    case 'a': //Query for single customer
+                        Console.Clear();
+                        await QueryCustomer();
+                        break;
+                    case 'b': //Point read for single customer
+                        Console.Clear();
+                        await GetCustomer();
+                        break;
+                    case 'c': //List all product categories
+                        Console.Clear();
+                        await ListAllProductCategories();
+                        break;
+                    case 'd': //Query products by category id
+                        Console.Clear();
+                        await QueryProductsByCategoryId();
+                        break;
+                    case 'e': //Update product category name
+                        Console.Clear();
+
+                        // Start Change Feed Procesor
+                        await changeFeed.StartChangeFeedProcessorAsync();
+
+                        await QueryProductsForCategory();
+                        await UpdateProductCategory();
+                        await QueryProductsForCategory();
+                        await RevertProductCategory();
+                        break;
+                    case 'f': //Query orders by customer id
+                        Console.Clear();
+                        await QuerySalesOrdersByCustomerId();
+                        break;
+                    case 'g': //Query for customer and all orders
+                        Console.Clear();
+                        await QueryCustomerAndSalesOrdersByCustomerId();
+                        break;
+                    case 'h': //Create new order and update order total
+                        Console.Clear();
+                        await CreateNewOrderAndUpdateCustomerOrderTotal();
+                        break;
+                    case 'i': //Delete order and update order total
+                        Console.Clear();
+                        await DeleteOrder();
+                        break;
+                    case 'j': //Query top 10 customers
+                        Console.Clear();
+                        await GetTop10Customers();
+                        break;
+                    case 'k': // Upload data to containers
+
+                        // Stop Change Feed Processor if running
+                        await changeFeed.StopChangeFeedProcessorAsync();
+
+                        await Deployment.LoadData(cosmosClient);
+                        Console.Clear();
+                        break;
+                    case 'l': // Delete databases and containers
+                        
+                        // Stop Change Feed Processor if running    
+                        await changeFeed.StopChangeFeedProcessorAsync();
+                        
+                        await Deployment.DeleteAllDatabases(cosmosManagement);
+                        Console.Clear();
+                        break;
+                    case 'm': // Create databases and containers
+                        await Deployment.CreateDatabaseAndContainers(cosmosManagement);
+                        Console.Clear();
+                        break;
+                    case 'n':
+                        // Start Change Feed Procesor
+                        await changeFeed.StartChangeFeedProcessorAsync();
+                        Console.Clear();
+                        break;
+                    case 'x':
+                        exit = true;
+                        break;
+                }
+            }
         }
     }
 }

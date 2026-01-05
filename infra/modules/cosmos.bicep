@@ -19,6 +19,7 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-11-15' = {
   properties: {
     enableFreeTier: false
     databaseAccountOfferType: 'Standard'
+    disableLocalAuth: true
     consistencyPolicy: {
       defaultConsistencyLevel: 'Session'
     }
@@ -34,6 +35,12 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-11-15' = {
         name: 'EnableServerless'
       }
     ]
+    backupPolicy: {
+      type: 'Continuous'
+      continuousModeProperties: {
+        tier: 'Continuous7Days'
+      }
+    }
   }
 }
 
@@ -499,5 +506,5 @@ resource currentUserRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRol
 }
 
 // Outputs
-output cosmosDbEndpoint string = cosmosAccount.properties.documentEndpoint
-output cosmosDbName string = cosmosAccount.name
+output cosmosEndpoint string = cosmosAccount.properties.documentEndpoint
+output cosmosAccount string = cosmosAccount.name

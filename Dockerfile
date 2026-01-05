@@ -1,30 +1,22 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+USER app
 WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /CosmicWorks
+COPY ["src/CosmicWorks.csproj", "src/"]
+COPY ["CosmicWorks.sln", "."]
+RUN dotnet restore "CosmicWorks.sln"
+COPY . .
+RUN dotnet build "CosmicWorks.sln" -c $BUILD_CONFIGURATION -o /app/build
 
-# Copy csproj and restore with retry for network issues
-COPY src/*.csproj ./src/
-RUN dotnet nuget disable source nuget.org && \
-    dotnet nuget enable source nuget.org && \
-    dotnet restore ./src/CosmicWorks.csproj
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "src/CosmicWorks.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# Copy everything else and build
-COPY . ./
-RUN dotnet publish src/CosmicWorks.csproj -c Release -o out
-
-# Build runtime image
-FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
-
-# Install Azure CLI for azd commands (optional)
-RUN apt-get update && \
-    apt-get install -y ca-certificates curl apt-transport-https lsb-release gnupg && \
-    curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null && \
-    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/azure-cli.list && \
-    apt-get update && \
-    apt-get install -y azure-cli && \
-    rm -rf /var/lib/apt/lists/*
-
+FROM base AS final
 WORKDIR /app
-COPY --from=build /app/out .
-
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "CosmicWorks.dll"]
