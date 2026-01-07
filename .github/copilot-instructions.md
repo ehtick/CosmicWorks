@@ -1,27 +1,31 @@
 # CosmicWorks - Azure Cosmos DB Data Modeling Demos
 
-CosmicWorks is a .NET 8.0 console application demonstrating the evolution of data models from relational to NoSQL using Azure Cosmos DB. The application shows four progressive database schema versions (v1-v4) with interactive demos.
+CosmicWorks is a .NET 9 console application demonstrating the evolution of data models from relational to NoSQL using Azure Cosmos DB. The application shows four progressive database schema versions (v1-v4) with interactive demos.
 
-**ALWAYS reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
+**ALWAYS reference these instructions first and fallback to search or terminal commands only when you encounter unexpected information that does not match the info here.**
 
 ## Working Effectively
 
 ### Prerequisites and Setup
-- Install .NET 8.0 SDK: `wget https://dotnet.microsoft.com/en-us/download/dotnet/8.0` or use your system package manager
+- Install .NET 9 SDK: https://dotnet.microsoft.com/download/dotnet/9.0
 - Install Azure CLI: `curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash`
 - Install Azure Developer CLI (AZD): `curl -fsSL https://aka.ms/install-azd.sh | bash`
 
 ### Build and Test Commands
 - **Bootstrap the repository**:
   ```bash
-  cd /home/runner/work/CosmicWorks/CosmicWorks/src
-  dotnet restore  # Takes ~1.5 seconds
-  dotnet build    # Takes ~1.8 seconds
+   cd src
+   dotnet restore  # Takes ~1.5 seconds
+   dotnet build    # Takes ~1.8 seconds
   ```
 - **NEVER CANCEL**: Set timeout to 120+ seconds for restore and build commands. Build times are very fast and consistent.
 - **No test projects exist** - `dotnet test` finds no test projects to run.
 
 ### Deployment Options (Choose One)
+
+#### Option 0: VS Code Dev Containers
+- Repo includes a Dev Container config at `.devcontainer/devcontainer.json` (base image: `mcr.microsoft.com/devcontainers/dotnet:9.0`).
+- Dev Containers requires Docker (Docker Desktop on Windows/macOS; Docker Engine on Linux) and the VS Code Dev Containers extension.
 
 #### Option 1: Azure Developer CLI (AZD) - RECOMMENDED
 ```bash
@@ -32,20 +36,7 @@ azd init      # First time only
 azd up        # Provisions Azure resources and creates appsettings.development.json
 ```
 
-#### Option 2: Docker (Requires Azure deployment first)
-```bash
-# Deploy to Azure first (required for configuration)
-azd auth login && azd init && azd up
-
-# Build and run container - NEVER CANCEL: Takes 5-10 minutes
-# Set timeout to 15+ minutes for docker build
-docker-compose up --build
-# OR manually:
-docker build -t cosmicworks . --timeout=900
-docker run -it --volume "./src/appsettings.development.json:/app/appsettings.development.json:ro" cosmicworks
-```
-
-#### Option 3: Local Development (Requires Azure deployment first)
+#### Option 2: Local Development (Requires Azure deployment first)
 ```bash
 # Deploy to Azure first (required for configuration)
 azd auth login && azd init && azd up
@@ -103,12 +94,11 @@ After making any changes, ALWAYS run through this complete validation scenario:
 - `dotnet build`: ~1.8 seconds - NEVER CANCEL, set timeout to 60+ seconds  
 - `azd up`: 10-15 minutes - NEVER CANCEL, set timeout to 20+ minutes
 - Data loading (`k` option): 5-15 minutes - NEVER CANCEL, depends on network speed
-- Docker build: 5-10 minutes - NEVER CANCEL, set timeout to 15+ minutes
 
 ## Key Projects and File Structure
 
 ### Primary Project
-- **`src/CosmicWorks.csproj`**: Main .NET 8.0 console application
+- **`src/CosmicWorks.csproj`**: Main .NET 9 console application
 - **`src/Program.cs`**: Application entry point and interactive menu system
 - **`src/Models.cs`**: Data models for different schema versions
 - **`src/Dataload.cs`**: Data loading functionality from GitHub
@@ -117,10 +107,12 @@ After making any changes, ALWAYS run through this complete validation scenario:
 ### Infrastructure
 - **`infra/`**: Bicep templates for Azure resource deployment
 - **`azure.yaml`**: Azure Developer CLI configuration
-- **`Dockerfile`**: Container build configuration
 
 ### Data
 - **`data/database-v1` through `data/database-v4`**: Sample data for different schema versions
+
+### Presentation
+- **`Cosmos DB Data Modeling Deck.pptx`**: Slides referenced by the demos
 
 ## Common Tasks and Troubleshooting
 
@@ -133,11 +125,6 @@ After making any changes, ALWAYS run through this complete validation scenario:
 - Application uses Azure Managed Identity for Cosmos DB access
 - AZD deployment automatically configures RBAC permissions
 - Current user gets access permissions during deployment
-
-### Docker Limitations
-- Docker build may fail in network-restricted environments due to NuGet access
-- Docker option requires Azure deployment first to generate configuration file
-- Use local development option if Docker build fails
 
 ### Performance Notes
 - Data loading can be slow on low bandwidth connections
@@ -152,14 +139,11 @@ After making any changes, ALWAYS run through this complete validation scenario:
 ├── data/                   # Sample data for v1-v4 schemas
 ├── .devcontainer/          # Dev container configuration
 ├── azure.yaml              # AZD configuration
-├── docker-compose.yml      # Docker composition
-├── Dockerfile              # Container build
 └── README.md               # Project documentation
 ```
 
 ## Common Error Resolution
 - **"appsettings.development.json not found"**: Run `azd up` to deploy Azure resources
 - **Authentication errors**: Ensure `azd auth login` was completed successfully  
-- **Docker build failures**: Use local development option instead
 - **Data loading timeouts**: Be patient, loading can take 15+ minutes on slow connections
-- **Build failures**: Ensure .NET 8.0 SDK is installed and try `dotnet clean` first
+- **Build failures**: Ensure .NET 9 SDK is installed and try `dotnet clean` first

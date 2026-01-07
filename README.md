@@ -1,7 +1,6 @@
 # Cosmic Works
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=AzureCosmosDB/CosmicWorks)
-[![Run with Docker](https://img.shields.io/badge/Run%20with-Docker-blue)](https://github.com/AzureCosmosDB/CosmicWorks#run-with-docker)
+[![Open in VS Code Dev Containers](https://img.shields.io/badge/Open%20in-VS%20Code%20Dev%20Containers-blue?logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode%3A%2F%2Fms-vscode-remote.remote-containers%2FcloneInVolume%3Furl%3Dhttps%3A%2F%2Fgithub.com%2FAzureCosmosDB%2FCosmicWorks)
 [![Deploy with AZD](https://img.shields.io/badge/Deploy%20with-Azure%20Developer%20CLI-blue)](https://github.com/AzureCosmosDB/CosmicWorks#deploy-to-azure-azd)
 
 This sample demonstrates how to migrate a relational database to a distributed, NoSQL database like Azure Cosmos DB.
@@ -21,15 +20,23 @@ The main components of this sample include:
 
 Choose one of these options to get started:
 
-1. **[Run in GitHub Codespaces](#run-in-codespaces)** - The fastest way to get started with zero local setup
-2. **[Run with Docker](#run-with-docker)** - Run locally in a container with minimal setup
-3. **[Run locally](#run-locally)** - Traditional local development experience
-4. **[Deploy to Azure (AZD)](#deploy-to-azure-azd)** - Deploy to Azure and run with real Azure Cosmos DB resources
+1. **[Run in VS Code Dev Containers](#run-in-dev-container)** - Consistent dev environment using containers
+2. **[Run locally](#run-locally)** - Traditional local development experience
 
-### Run in CodeSpaces
+### Run in Dev Container
 
-1. Click the **Open in GitHub Codespaces** button at the top of this README
-1. Wait for the Codespace to initialize (this may take a few minutes)
+**Prerequisites**
+
+1. Install [Visual Studio Code](https://code.visualstudio.com/)
+1. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension
+1. Install Docker:
+   - Windows/macOS: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+   - Linux: Docker Engine + Docker CLI (ensure your user can run `docker`)
+
+**Steps**
+
+1. Click the **Open in VS Code Dev Containers** badge at the top of this README
+1. Wait for the dev container to build and start (this may take a few minutes the first time)
 1. Deploy to Azure using [Deploy to Azure (AZD)](#deploy-to-azure-azd)
 1. Once deployed, open the integrated terminal and run:
 
@@ -38,53 +45,23 @@ Choose one of these options to get started:
    dotnet run
    ```
 
-GitHub Codespaces provides the best performance for data loading since it runs in the cloud, closer to the Azure Cosmos DB resources.
-
-## Run with Docker
-
-To run CosmicWorks in a containerized environment:
-
-1. Make sure [Docker](https://www.docker.com/products/docker-desktop/) is installed on your system
-2. Clone the repository:
-
-   ```bash
-   git clone https://github.com/AzureCosmosDB/CosmicWorks.git
-   cd CosmicWorks
-   ```
-
-3. Deploy to Azure first (this creates the necessary appsettings.development.json file):
-
-   See [Deploy to Azure (AZD)](#deploy-to-azure-azd).
-
-4. Build and run the container:
-
-   ```bash
-   docker-compose up --build
-   ```
-
-You can also build and run the Docker container manually:
-
-```bash
-docker build -t cosmicworks .
-docker run -it --volume "./src/appsettings.development.json:/app/appsettings.development.json:ro" cosmicworks
-```
+1. On the main menu, press 'k' to load data
+1. Open the [Cosmos DB Data Moeling Deck](./CosmosDbDataModelingDeck.pptx)
+1. Follow the slides to learn the concepts.
+1. For each of the Demo slides, refer to the Speaker notes.
+1. Execute the demos by pressing the corresponding menu keys in the app.
 
 ## Run Locally
 
-To run CosmicWorks directly on your local machine:
+**Prerequisites**
 
-1. Ensure [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) is installed
-1. Clone the repository:
+1. [Visual Studio Code](https://code.visualstudio.com/)
+1. [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 
-   ```bash
-   git clone https://github.com/AzureCosmosDB/CosmicWorks.git
-   cd CosmicWorks
-   ```
+**Steps**
 
-1. Deploy to Azure (this creates the necessary appsettings.development.json file):
-
-   See [Deploy to Azure (AZD)](#deploy-to-azure-azd).
-
+1. Clone the repository `git clone https://github.com/AzureCosmosDB/CosmicWorks.git`
+1. Deploy to Azure using [Deploy to Azure (AZD)](#deploy-to-azure-azd)
 1. Run the application:
 
    ```bash
@@ -93,7 +70,10 @@ To run CosmicWorks directly on your local machine:
    ```
 
 1. On the main menu, press 'k' to load data
-1. Explore the different functions by pressing the corresponding menu keys
+1. Open the [Cosmos DB Data Modeling Deck](./CosmosDbDataModelingDeck.pptx)
+1. Follow the slides to learn the concepts.
+1. For each of the Demo slides, refer to the Speaker notes.
+1. Execute the demos by pressing the corresponding menu keys in the app.
 
 ## Deploy to Azure (AZD)
 
@@ -112,7 +92,6 @@ Run these commands once per environment (and any time you need to reprovision):
 
 ```bash
 azd auth login
-azd init
 azd up
 ```
 
